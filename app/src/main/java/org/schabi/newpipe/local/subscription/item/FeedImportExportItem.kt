@@ -15,6 +15,7 @@ import org.schabi.newpipe.databinding.FeedImportExportGroupBinding
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.ktx.animateRotation
+import org.schabi.newpipe.util.ServiceFilter
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.ThemeHelper
 import org.schabi.newpipe.views.CollapsibleView
@@ -133,6 +134,7 @@ class FeedImportExportItem(
         for (serviceName in services) {
             try {
                 val service = NewPipe.getService(serviceName)
+                if (ServiceFilter.isHidden(service.serviceId)) continue
 
                 val subscriptionExtractor = service.subscriptionExtractor ?: continue
 
