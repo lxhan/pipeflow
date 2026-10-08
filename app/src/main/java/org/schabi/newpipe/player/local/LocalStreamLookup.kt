@@ -18,7 +18,7 @@ import java.io.File
  * Downloads are stored under the extractor-normalized url, but queue items can carry other forms
  * (music.youtube.com, shorts), so the lookup tries the item's url and its normalized form.
  */
-class LocalStreamLookup(context: Context) {
+class LocalStreamLookup private constructor(context: Context) {
     private val appContext = context.applicationContext
     private val missionStore = FinishedMissionStore(appContext)
     private val streamTable = NewPipeDatabase.getInstance(appContext).streamDAO()
@@ -51,6 +51,15 @@ class LocalStreamLookup(context: Context) {
 
     companion object {
         private const val TAG = "LocalStreamLookup"
+
+        @Volatile
+        private var instance: LocalStreamLookup? = null
+
+        @JvmStatic
+        fun getInstance(context: Context): LocalStreamLookup =
+            instance ?: synchronized(this) {
+                instance ?: LocalStreamLookup(context.applicationContext).also { instance = it }
+            }
 
         @JvmStatic
         internal fun candidateUrls(serviceId: Int, url: String): List<String> {

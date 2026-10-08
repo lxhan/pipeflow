@@ -174,7 +174,7 @@ public class MediaSourceManager {
         this.playbackListener = listener;
         this.playQueue = playQueue;
         this.streamInfoResolver = streamInfoResolver;
-        this.localStreamLookup = new LocalStreamLookup(context);
+        this.localStreamLookup = LocalStreamLookup.getInstance(context);
 
         this.playbackNearEndGapMillis = playbackNearEndGapMillis;
         this.progressUpdateIntervalMillis = progressUpdateIntervalMillis;
