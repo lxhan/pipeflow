@@ -102,11 +102,11 @@ Every queue item (`PlayerMediaItem`) is resolved in `MediaSourceManager.getLoade
 
 ### Units
 
-1. **`FinishedMissionStore.findByUrl(String url)`** (`us/shandian/giga/get/sqlite`): `SELECT path, kind FROM finished_missions WHERE url = ? ORDER BY timestamp DESC`, returns `List<DownloadedFile>` (`player/local/DownloadedFile(path: String, kind: Char)`). Does not build `StoredFileHelper` per row (the existing loader does, which is slow for SAF).
+1. **`FinishedMissionStore.findByUrls(List<String> urls)`** (`us/shandian/giga/get/sqlite`): `SELECT path, kind FROM finished_missions WHERE url IN (?, ...) ORDER BY timestamp DESC`, returns `List<DownloadedFile>` (`player/local/DownloadedFile(path: String, kind: Char)`). Does not build `StoredFileHelper` per row (the existing loader does, which is slow for SAF).
 
 2. **`player/local/LocalStream`**: value holding `audioPath: String?`, `videoPath: String?`, `entity: StreamEntity?`. Paths are kept as strings so the selection logic is JVM-testable. `fromFiles(files, exists, entity)` keeps `a`/`v` rows whose file exists and takes the newest of each kind; null when none. `pick(audioOnly)` returns audio-first when `audioOnly`, video-first otherwise, falling back to the other.
 
-3. **`player/local/LocalStreamLookup`**: `find(item): Maybe<LocalStream>`. Queries `findByUrl(item.url)`, checks existence (`File.exists()` for `file://` and scheme-less legacy paths, `DocumentFile.fromSingleUri(...).exists()` for `content://`), loads the `StreamEntity` for `(serviceId, url)` from the Room `streams` table if present. Empty when no playable file or on any error. Runs on `Schedulers.io()`.
+3. **`player/local/LocalStreamLookup`**: `find(item): Maybe<LocalStream>`. Queries `findByUrls` with `item.url` plus its link-handler-normalized form, checks existence (`File.exists()` for `file://` and scheme-less legacy paths, `DocumentFile.fromSingleUri(...).exists()` for `content://`), loads the `StreamEntity` for `(serviceId, url)` from the Room `streams` table if present. Empty when no playable file or on any error. Runs on `Schedulers.io()`.
 
 4. **`player/local/LocalStreamInfo.from(PlayerMediaItem item, @Nullable StreamEntity entity)`**: builds a `StreamInfo` with no streams and no related items via `new StreamInfo(serviceId, url, url, streamType, id, name, 0)` plus setters for uploader name/url, thumbnail url, duration, view count, upload date. Values come from `entity` when present (always the case for local playlist items, since playlist entries reference `streams`), otherwise from `item`. `id` comes from the service's stream link handler `getId(url)`, falling back to `url` if parsing throws. Seeding from `entity` matters because history writes upsert a `StreamEntity` built from this info; queue-item-only values would reset view count.
 
@@ -165,4 +165,5 @@ Manual on device (release build):
 
 - Notification and lock-screen thumbnail are blank offline (thumbnail is a remote URL).
 - Autoplay does not append related videos after a local item (synthetic info has no related items).
-- Lookup is by exact URL. BiliBili `?p=` and `#timestamp=` variants, and non-canonical URLs in imported data, may miss and stream instead. YouTube is unaffected.
+- The lookup tries the queue item's url and its link-handler-normalized form, so YouTube Music and Shorts urls match. BiliBili `?p=` / `#timestamp=` variants that normalize differently may still miss and stream instead.
+- SponsorBlock, subtitles and alternate audio tracks don't apply to downloaded items, since they play from the file without extraction.
