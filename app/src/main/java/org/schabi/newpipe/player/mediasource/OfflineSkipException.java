@@ -12,6 +12,10 @@ public final class OfflineSkipException extends FailedMediaSource.FailedMediaSou
         super(cause);
     }
 
+    public OfflineSkipException(final String message) {
+        super(message);
+    }
+
     public static boolean onlyOfflineSkips(@NonNull final List<Exception> errors) {
         if (errors.isEmpty()) {
             return false;

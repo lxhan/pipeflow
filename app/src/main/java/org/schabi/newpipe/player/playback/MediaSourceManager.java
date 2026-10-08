@@ -471,6 +471,11 @@ public class MediaSourceManager {
         return new LoadedMediaSource(source, tag.get(), stream, Long.MAX_VALUE);
     }
 
+    private static FailedMediaSource offlineSkip(@NonNull final PlayerMediaItem stream,
+                                                 @NonNull final OfflineSkipException error) {
+        return FailedMediaSource.of(stream, error, OFFLINE_RETRY_MILLIS);
+    }
+
     private boolean hasValidatedNetwork() {
         final ConnectivityManager manager =
                 ContextCompat.getSystemService(context, ConnectivityManager.class);
@@ -487,6 +492,12 @@ public class MediaSourceManager {
 
     private Single<ManagedMediaSource> getExtractedMediaSource(
             @NonNull final PlayerMediaItem stream) {
+        // Cached StreamInfo resolves without network, and the player would then loop on the
+        // dead stream url.
+        if (!hasValidatedNetwork()) {
+            return Single.<ManagedMediaSource>just(
+                    offlineSkip(stream, new OfflineSkipException("No validated network")));
+        }
         return streamInfoResolver.streamOf(stream).map(streamInfo -> {
             final MediaSource source = playbackListener.sourceOf(stream, streamInfo);
             if (source == null || !ExoMediaItems.fromMediaItem(source.getMediaItem()).isPresent()) {
@@ -508,8 +519,7 @@ public class MediaSourceManager {
             // ExtractionException, so check the network before the type. Retryable, so items
             // play again once the network is back.
             if (!hasValidatedNetwork()) {
-                return FailedMediaSource.of(stream, new OfflineSkipException(throwable),
-                        OFFLINE_RETRY_MILLIS);
+                return offlineSkip(stream, new OfflineSkipException(throwable));
             }
             // ExtractionException = stream info load failure; IllegalStateException = a resolver
             // source-build failure (e.g. SABR probe / session creation), thrown by sourceOf. Both are
