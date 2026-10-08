@@ -13,6 +13,8 @@ import com.google.android.exoplayer2.source.MediaSource;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+import org.schabi.newpipe.player.local.LocalStream;
+import org.schabi.newpipe.player.local.LocalStreamLookup;
 import org.schabi.newpipe.player.mediaitem.ExoMediaItems;
 import org.schabi.newpipe.player.mediaitem.ExtractorStreamInfoResolver;
 import org.schabi.newpipe.player.mediaitem.PlayerMediaItem;
@@ -31,11 +33,13 @@ import org.schabi.newpipe.util.ServiceHelper;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
@@ -127,6 +131,9 @@ public class MediaSourceManager {
     private final StreamInfoResolver streamInfoResolver;
 
     @NonNull
+    private final LocalStreamLookup localStreamLookup;
+
+    @NonNull
     private final AtomicBoolean isBlocked;
 
     @NonNull
@@ -162,6 +169,7 @@ public class MediaSourceManager {
         this.playbackListener = listener;
         this.playQueue = playQueue;
         this.streamInfoResolver = streamInfoResolver;
+        this.localStreamLookup = new LocalStreamLookup(context);
 
         this.playbackNearEndGapMillis = playbackNearEndGapMillis;
         this.progressUpdateIntervalMillis = progressUpdateIntervalMillis;
@@ -434,6 +442,29 @@ public class MediaSourceManager {
     }
 
     private Single<ManagedMediaSource> getLoadedMediaSource(@NonNull final PlayerMediaItem stream) {
+        return localStreamLookup.find(stream)
+                .flatMap(local -> Maybe.fromCallable(() -> getLocalMediaSource(stream, local)))
+                .switchIfEmpty(Single.defer(() -> getExtractedMediaSource(stream)));
+    }
+
+    @Nullable
+    private ManagedMediaSource getLocalMediaSource(@NonNull final PlayerMediaItem stream,
+                                                   @NonNull final LocalStream local) {
+        final MediaSource source = playbackListener.localSourceOf(stream, local);
+        final Optional<PlayerMediaItem> tag = source == null
+                ? Optional.empty() : ExoMediaItems.fromMediaItem(source.getMediaItem());
+        if (!tag.isPresent()) {
+            return null;
+        }
+        if (DEBUG) {
+            Log.d(TAG, "MediaSource - Local file for [" + stream.getTitle() + "]");
+        }
+        // Unlike extracted stream urls, a file never expires.
+        return new LoadedMediaSource(source, tag.get(), stream, Long.MAX_VALUE);
+    }
+
+    private Single<ManagedMediaSource> getExtractedMediaSource(
+            @NonNull final PlayerMediaItem stream) {
         return streamInfoResolver.streamOf(stream).map(streamInfo -> {
             final MediaSource source = playbackListener.sourceOf(stream, streamInfo);
             if (source == null || !ExoMediaItems.fromMediaItem(source.getMediaItem()).isPresent()) {

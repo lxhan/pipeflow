@@ -17,6 +17,7 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.MinimizeMode.MINIMIZ
 import android.annotation.SuppressLint;
 import android.content.*;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -60,6 +61,8 @@ import org.schabi.newpipe.player.helper.LoadController;
 import org.schabi.newpipe.player.helper.MediaSessionManager;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.helper.PlayerHelper;
+import org.schabi.newpipe.player.local.LocalStream;
+import org.schabi.newpipe.player.local.LocalStreamInfo;
 import org.schabi.newpipe.player.mediaitem.PlayerMediaItem;
 import org.schabi.newpipe.player.mediasession.PlayerServiceInterface;
 import org.schabi.newpipe.player.playback.MediaSourceManager;
@@ -1229,6 +1232,19 @@ public final class Player {
                 ? recoveryPosition : 0;
         return sourceResolver.resolve(playerType, isAudioOnly, info, initialPositionMs,
                 startupTraceId);
+    }
+
+    @Nullable
+    MediaSource localSourceOf(@NonNull final PlayerMediaItem item,
+                              @NonNull final LocalStream local) {
+        final String path = local.pick(isAudioOnly || audioPlayerSelected());
+        if (path == null) {
+            return null;
+        }
+        final PlayerMediaItem tag = PlayerMediaItem.forStreamInfo(
+                LocalStreamInfo.from(item, local.getEntity()));
+        return dataSource.getProgressiveMediaSourceFactory().createMediaSource(
+                new MediaItem.Builder().setTag(tag).setUri(Uri.parse(path)).build());
     }
 
     public void disablePreloadingOfCurrentTrack() {

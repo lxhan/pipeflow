@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.source.MediaSource;
 
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.player.local.LocalStream;
 import org.schabi.newpipe.player.mediaitem.PlayerMediaItem;
 
 public interface PlaybackListener {
@@ -68,6 +69,15 @@ public interface PlaybackListener {
      */
     @Nullable
     MediaSource sourceOf(PlayerMediaItem item, StreamInfo info);
+
+    /**
+     * Requests the listener to build a media source playing an already downloaded file, used
+     * instead of {@link #sourceOf(PlayerMediaItem, StreamInfo)} when one exists.
+     *
+     * @return the media source, or null if none of the files fits
+     */
+    @Nullable
+    MediaSource localSourceOf(@NonNull PlayerMediaItem item, @NonNull LocalStream local);
 
     /**
      * Called when the play queue can no longer be played or used.

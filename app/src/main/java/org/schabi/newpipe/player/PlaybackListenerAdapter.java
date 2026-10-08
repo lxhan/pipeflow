@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.source.MediaSource;
 
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.player.local.LocalStream;
 import org.schabi.newpipe.player.mediaitem.PlayerMediaItem;
 import org.schabi.newpipe.player.playback.PlaybackListener;
 
@@ -52,6 +53,13 @@ final class PlaybackListenerAdapter implements PlaybackListener {
     @Override
     public MediaSource sourceOf(final PlayerMediaItem item, final StreamInfo info) {
         return player.sourceOf(item, info);
+    }
+
+    @Nullable
+    @Override
+    public MediaSource localSourceOf(@NonNull final PlayerMediaItem item,
+                                     @NonNull final LocalStream local) {
+        return player.localSourceOf(item, local);
     }
 
     @Override
