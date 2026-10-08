@@ -12,8 +12,10 @@ import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
+import org.schabi.newpipe.player.local.DownloadedFile;
 import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.FinishedMission;
 import us.shandian.giga.get.Mission;
@@ -181,6 +183,25 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
             result.add(getMissionFromCursor(cursor));
         }
 
+        return result;
+    }
+
+    /**
+     * Rows for one source url, newest first. Unlike {@link #loadFinishedMissions()} this skips
+     * building a StoredFileHelper per row, which is slow for SAF files.
+     */
+    @NonNull
+    public List<DownloadedFile> findByUrl(@NonNull String url) {
+        List<DownloadedFile> result = new ArrayList<>();
+        try (Cursor cursor = getReadableDatabase().query(FINISHED_TABLE_NAME,
+                new String[]{KEY_PATH, KEY_KIND}, KEY_SOURCE + " = ?", new String[]{url},
+                null, null, KEY_TIMESTAMP + " DESC")) {
+            while (cursor.moveToNext()) {
+                String kind = cursor.getString(1);
+                result.add(new DownloadedFile(cursor.getString(0),
+                        kind == null || kind.isEmpty() ? '?' : kind.charAt(0)));
+            }
+        }
         return result;
     }
 
