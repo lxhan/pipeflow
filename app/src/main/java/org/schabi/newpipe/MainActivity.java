@@ -185,12 +185,6 @@ public class MainActivity extends AppCompatActivity {
             prefs.edit().putString(getString(R.string.preferred_audio_language_key), "original").apply();
         } // remove this after sometime
 
-        if (prefs.getBoolean(app.getString(R.string.update_app_key), false)) {
-            // Start the worker which is checking all conditions
-            // and eventually searching for a new version.
-                NewVersionWorker.enqueueNewVersionCheckingWork(app, false);
-        }
-
         int currentVersionCode = BuildConfig.VERSION_CODE;
         int storedVersionCode = prefs.getInt("version_code", 0);
         long lastShowDonationTime = prefs.getLong("last_show_donation_time", 0);
@@ -251,15 +245,6 @@ public class MainActivity extends AppCompatActivity {
 
         int isFirstRun = prefs.getInt("isFirstRun", 0);
         if (isFirstRun == 0) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(R.string.dialog_title_enable_update_checker);
-            builder.setMessage(R.string.dialog_message_enable_update_checker);
-            builder.setPositiveButton(R.string.ok, (dialog, which) -> {
-                prefs.edit().putBoolean(app.getString(R.string.update_app_key), true).apply();
-                NewVersionWorker.enqueueNewVersionCheckingWork(app, true);
-            });
-            builder.setNegativeButton(R.string.no, (dialog, which) -> prefs.edit().putBoolean(app.getString(R.string.update_app_key), false).apply());
-            builder.show();
             prefs.edit().putInt("isFirstRun", 1).apply();
             PermissionChecker.checkNotificationPermission(this);
         }
