@@ -16,7 +16,7 @@ Every gradle command needs:
     export ANDROID_HOME="$HOME/Library/Android/sdk"
 
 - Build debug: `./gradlew :app:assembleDebug`
-- Build release: `KEY_PATH="$HOME/.android/pipeflow.jks" KEY_STORE_PASSWORD=... KEY_ALIAS=pipeflow KEY_PASSWORD=... ./gradlew :app:assembleRelease`
+- Build release (signed with this machine's debug keystore; updates must be built on the same machine): `KEY_PATH="$HOME/.android/debug.keystore" KEY_STORE_PASSWORD=android KEY_ALIAS=androiddebugkey KEY_PASSWORD=android ./gradlew :app:assembleRelease`
 - Unit tests: `./gradlew :app:testDebugUnitTest`
 - Lint (report only, never fails the build): `./gradlew :app:lintDebug`
 - Install on phone: `adb install -r app/build/outputs/apk/release/PipeFlow_*-arm64-v8a-release.apk`
