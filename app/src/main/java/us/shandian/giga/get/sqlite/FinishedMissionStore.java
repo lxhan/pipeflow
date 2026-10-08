@@ -187,15 +187,22 @@ public class FinishedMissionStore extends SQLiteOpenHelper {
     }
 
     /**
-     * Rows for one source url, newest first. Unlike {@link #loadFinishedMissions()} this skips
-     * building a StoredFileHelper per row, which is slow for SAF files.
+     * Rows for any of the given source urls, newest first. Unlike {@link #loadFinishedMissions()}
+     * this skips building a StoredFileHelper per row, which is slow for SAF files.
      */
     @NonNull
-    public List<DownloadedFile> findByUrl(@NonNull String url) {
+    public List<DownloadedFile> findByUrls(@NonNull List<String> urls) {
         List<DownloadedFile> result = new ArrayList<>();
+        if (urls.isEmpty()) {
+            return result;
+        }
+        StringBuilder placeholders = new StringBuilder("?");
+        for (int i = 1; i < urls.size(); i++) {
+            placeholders.append(", ?");
+        }
         try (Cursor cursor = getReadableDatabase().query(FINISHED_TABLE_NAME,
-                new String[]{KEY_PATH, KEY_KIND}, KEY_SOURCE + " = ?", new String[]{url},
-                null, null, KEY_TIMESTAMP + " DESC")) {
+                new String[]{KEY_PATH, KEY_KIND}, KEY_SOURCE + " IN (" + placeholders + ")",
+                urls.toArray(new String[0]), null, null, KEY_TIMESTAMP + " DESC")) {
             while (cursor.moveToNext()) {
                 String kind = cursor.getString(1);
                 result.add(new DownloadedFile(cursor.getString(0),

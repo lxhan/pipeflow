@@ -8,13 +8,15 @@ import androidx.documentfile.provider.DocumentFile
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.schabi.newpipe.NewPipeDatabase
+import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.player.mediaitem.PlayerMediaItem
 import us.shandian.giga.get.sqlite.FinishedMissionStore
 import java.io.File
 
 /**
  * Finds a downloaded file for a queue item by matching its url against finished downloads.
- * Both sides hold the extractor's canonical stream url, so an exact match is enough.
+ * Downloads are stored under the extractor-normalized url, but queue items can carry other forms
+ * (music.youtube.com, shorts), so the lookup tries the item's url and its normalized form.
  */
 class LocalStreamLookup(context: Context) {
     private val appContext = context.applicationContext
@@ -23,7 +25,7 @@ class LocalStreamLookup(context: Context) {
 
     fun find(item: PlayerMediaItem): Maybe<LocalStream> =
         Maybe.fromCallable<LocalStream> {
-            val files = missionStore.findByUrl(item.url)
+            val files = missionStore.findByUrls(candidateUrls(item.serviceId, item.url))
             if (files.isEmpty()) {
                 return@fromCallable null
             }
@@ -49,5 +51,15 @@ class LocalStreamLookup(context: Context) {
 
     companion object {
         private const val TAG = "LocalStreamLookup"
+
+        @JvmStatic
+        internal fun candidateUrls(serviceId: Int, url: String): List<String> {
+            val normalized = try {
+                NewPipe.getService(serviceId).streamLHFactory.fromUrl(url).url
+            } catch (e: Exception) {
+                return listOf(url)
+            }
+            return if (normalized == url) listOf(url) else listOf(url, normalized)
+        }
     }
 }
