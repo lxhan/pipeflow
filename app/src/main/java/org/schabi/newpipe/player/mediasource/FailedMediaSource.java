@@ -33,6 +33,12 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
      * */
     public static final long SILENCE_DURATION_US = TimeUnit.SECONDS.toMicros(2);
     public static final MediaPeriod SILENT_MEDIA = makeSilentMediaPeriod(SILENCE_DURATION_US);
+    /**
+     * Offline skips need no time to react, so they use the 1 second floor mentioned above.
+     */
+    private static final long OFFLINE_SILENCE_DURATION_US = TimeUnit.SECONDS.toMicros(1);
+    private static final MediaPeriod OFFLINE_SILENT_MEDIA =
+            makeSilentMediaPeriod(OFFLINE_SILENCE_DURATION_US);
 
     private final String TAG = "FailedMediaSource@" + Integer.toHexString(hashCode());
     private final PlayerMediaItem playQueueItem;
@@ -84,6 +90,10 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
         return System.currentTimeMillis() >= retryTimestamp;
     }
 
+    private boolean isOfflineSkip() {
+        return error instanceof OfflineSkipException;
+    }
+
     @Override
     public MediaItem getMediaItem() {
         return mediaItem;
@@ -110,7 +120,8 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
     protected void prepareSourceInternal(@Nullable final TransferListener mediaTransferListener) {
         Log.e(TAG, "Loading failed source: ", error);
         if (error instanceof FailedMediaSourceException) {
-            refreshSourceInfo(makeSilentMediaTimeline(SILENCE_DURATION_US, mediaItem));
+            refreshSourceInfo(makeSilentMediaTimeline(isOfflineSkip()
+                    ? OFFLINE_SILENCE_DURATION_US : SILENCE_DURATION_US, mediaItem));
         }
     }
 
@@ -144,7 +155,7 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
     public MediaPeriod createPeriod(final MediaPeriodId id,
                                     final Allocator allocator,
                                     final long startPositionUs) {
-        return SILENT_MEDIA;
+        return isOfflineSkip() ? OFFLINE_SILENT_MEDIA : SILENT_MEDIA;
     }
 
     @Override

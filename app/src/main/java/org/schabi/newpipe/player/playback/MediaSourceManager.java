@@ -1,12 +1,15 @@
 package org.schabi.newpipe.player.playback;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.exoplayer2.source.MediaSource;
 
@@ -23,6 +26,7 @@ import org.schabi.newpipe.player.mediasource.FailedMediaSource;
 import org.schabi.newpipe.player.mediasource.LoadedMediaSource;
 import org.schabi.newpipe.player.mediasource.ManagedMediaSource;
 import org.schabi.newpipe.player.mediasource.ManagedMediaSourcePlaylist;
+import org.schabi.newpipe.player.mediasource.OfflineSkipException;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.events.MoveEvent;
 import org.schabi.newpipe.player.playqueue.events.PlayQueueEvent;
@@ -77,6 +81,7 @@ public class MediaSourceManager {
      * @see #maybeLoadItem(PlayerMediaItem)
      */
     private static final int MAXIMUM_LOADER_SIZE = WINDOW_SIZE * 2 + 1;
+    private static final long OFFLINE_RETRY_MILLIS = TimeUnit.SECONDS.toMillis(30);
     @NonNull
     private final Context context;
     @NonNull
@@ -466,6 +471,20 @@ public class MediaSourceManager {
         return new LoadedMediaSource(source, tag.get(), stream, Long.MAX_VALUE);
     }
 
+    private boolean hasValidatedNetwork() {
+        final ConnectivityManager manager =
+                ContextCompat.getSystemService(context, ConnectivityManager.class);
+        if (manager == null) {
+            return true;
+        }
+        final NetworkCapabilities capabilities =
+                manager.getNetworkCapabilities(manager.getActiveNetwork());
+        // VALIDATED: captive portals and Wi-Fi without uplink count as offline too.
+        return capabilities != null
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    }
+
     private Single<ManagedMediaSource> getExtractedMediaSource(
             @NonNull final PlayerMediaItem stream) {
         return streamInfoResolver.streamOf(stream).map(streamInfo -> {
@@ -485,6 +504,13 @@ public class MediaSourceManager {
                     + ServiceHelper.getCacheExpirationMillis(streamInfo.getServiceId());
             return new LoadedMediaSource(source, item, stream, expiration);
         }).onErrorReturn(throwable -> {
+            // Offline failures arrive raw (UnknownHostException) or wrapped in an
+            // ExtractionException, so check the network before the type. Retryable, so items
+            // play again once the network is back.
+            if (!hasValidatedNetwork()) {
+                return FailedMediaSource.of(stream, new OfflineSkipException(throwable),
+                        OFFLINE_RETRY_MILLIS);
+            }
             // ExtractionException = stream info load failure; IllegalStateException = a resolver
             // source-build failure (e.g. SABR probe / session creation), thrown by sourceOf. Both are
             // source errors: keep the real cause so the report says where it came from, and don't

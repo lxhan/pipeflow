@@ -10,6 +10,7 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.player.mediaitem.ExoMediaItems
 import org.schabi.newpipe.player.mediaitem.PlayerMediaItem
+import org.schabi.newpipe.player.mediasource.OfflineSkipException
 import java.util.Optional
 
 /**
@@ -64,7 +65,7 @@ class PlayerMetadataController(private val player: Player) {
                 .flatMap { item: PlayerMediaItem -> item.maybeStreamInfo }.orElse(null)
             currentMetadata = tag
 
-            if (tag.errors.isNotEmpty()) {
+            if (tag.errors.isNotEmpty() && !OfflineSkipException.onlyOfflineSkips(tag.errors)) {
                 // new errors might have been added even if previousInfo == tag.getMaybeStreamInfo()
                 val errorInfo = ErrorInfo(
                     tag.errors,
