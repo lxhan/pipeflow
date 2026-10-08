@@ -444,6 +444,9 @@ public class MediaSourceManager {
     private Single<ManagedMediaSource> getLoadedMediaSource(@NonNull final PlayerMediaItem stream) {
         return localStreamLookup.find(stream)
                 .flatMap(local -> Maybe.fromCallable(() -> getLocalMediaSource(stream, local)))
+                .doOnError(e -> Log.w(TAG, "MediaSource - Local file failed for ["
+                        + stream.getTitle() + "], falling back to network", e))
+                .onErrorComplete()
                 .switchIfEmpty(Single.defer(() -> getExtractedMediaSource(stream)));
     }
 
