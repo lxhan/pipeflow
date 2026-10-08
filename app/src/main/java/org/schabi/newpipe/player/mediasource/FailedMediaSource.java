@@ -49,8 +49,9 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
      * Fail the play queue item associated with this source, with potential future retries.
      *
      * The error will be propagated if the cause for load exception is unspecified.
-     * This means the error might be caused by reasons outside of extraction (e.g. no network).
-     * Otherwise, a silenced stream will play instead.
+     * This means the error might be caused by reasons outside of extraction.
+     * Otherwise, a silenced stream will play instead. Offline skips arrive as
+     * {@link OfflineSkipException}, a {@link FailedMediaSourceException}, and play silence too.
      *
      * @param playQueueItem  play queue item
      * @param error          exception that was the reason to fail
@@ -126,7 +127,7 @@ public class FailedMediaSource extends BaseMediaSource implements ManagedMediaSo
     }
 
     /**
-     * If the error is not known, e.g. network issue, then the exception is not swallowed here in
+     * If the error is not known, then the exception is not swallowed here in
      * {@link FailedMediaSource}. The exception is then propagated to the player, which
      * {@link org.schabi.newpipe.player.Player Player} can react to inside
      * {@link com.google.android.exoplayer2.Player.Listener#onPlayerError(PlaybackException)}.
