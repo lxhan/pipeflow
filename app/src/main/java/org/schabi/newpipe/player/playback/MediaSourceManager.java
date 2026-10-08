@@ -482,8 +482,13 @@ public class MediaSourceManager {
         if (manager == null) {
             return true;
         }
-        final NetworkCapabilities capabilities =
-                manager.getNetworkCapabilities(manager.getActiveNetwork());
+        final NetworkCapabilities capabilities;
+        try {
+            capabilities = manager.getNetworkCapabilities(manager.getActiveNetwork());
+        } catch (final SecurityException e) {
+            // Some Android 11 builds throw here; treat as online like upstream does.
+            return true;
+        }
         // VALIDATED: captive portals and Wi-Fi without uplink count as offline too.
         return capabilities != null
                 && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
