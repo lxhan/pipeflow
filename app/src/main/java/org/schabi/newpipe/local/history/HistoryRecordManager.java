@@ -276,8 +276,16 @@ public class HistoryRecordManager {
     }
 
     public Maybe<StreamStateEntity> loadStreamState(final PlayerMediaItem queueItem) {
-        return ExtractorStreamInfoResolver.INSTANCE.streamOf(queueItem)
-                .map(info -> streamTable.upsert(new StreamEntity(info)))
+        // Playlist and history items always have a stored stream, so resume needs no network.
+        return Maybe.fromCallable(() -> {
+                    final List<StreamEntity> stored = streamTable
+                            .getStream(queueItem.getServiceId(), queueItem.getUrl())
+                            .blockingFirst();
+                    return stored.isEmpty() ? null : stored.get(0).getUid();
+                })
+                .switchIfEmpty(Single.defer(() -> ExtractorStreamInfoResolver.INSTANCE
+                        .streamOf(queueItem)
+                        .map(info -> streamTable.upsert(new StreamEntity(info)))))
                 .flatMapPublisher(streamStateTable::getState)
                 .firstElement()
                 .flatMap(list -> list.isEmpty() ? Maybe.empty() : Maybe.just(list.get(0)))
