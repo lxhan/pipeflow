@@ -7,6 +7,7 @@ import android.widget.Toast;
 import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.util.KioskFilter;
 
 import java.util.List;
 
@@ -29,12 +30,17 @@ public final class TabsManager {
 
     public List<Tab> getTabs() {
         final String savedJson = sharedPreferences.getString(savedTabsKey, null);
+        final List<Tab> savedTabs;
         try {
-            return TabsJsonHelper.getTabsFromJson(savedJson);
+            savedTabs = TabsJsonHelper.getTabsFromJson(savedJson);
         } catch (final TabsJsonHelper.InvalidJsonException e) {
             Toast.makeText(context, R.string.saved_tabs_invalid_json, Toast.LENGTH_SHORT).show();
             return getDefaultTabs();
         }
+        // Saved tabs and imported PipePipe backups can still contain the hidden kiosk.
+        final List<Tab> visibleTabs = KioskFilter.filterTabs(savedTabs,
+                KioskFilter.selectedServiceDefaultKioskId(context));
+        return visibleTabs.isEmpty() ? getDefaultTabs() : visibleTabs;
     }
 
     public void saveTabs(final List<Tab> tabList) {

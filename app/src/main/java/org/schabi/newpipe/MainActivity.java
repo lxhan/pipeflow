@@ -292,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
 
         int kioskId = 0;
 
-        for (final String ks : service.getKioskList().getAvailableKiosks()) {
+        for (final String ks : KioskFilter.visibleKiosks(service)) {
             drawerLayoutBinding.navigation.getMenu()
                     .add(R.id.menu_tabs_group, kioskId, 0, KioskTranslator
                             .getTranslatedKioskName(ks, this))
@@ -379,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
                 String serviceName = "";
 
                 int kioskId = 0;
-                for (final String ks : service.getKioskList().getAvailableKiosks()) {
+                for (final String ks : KioskFilter.visibleKiosks(service)) {
                     if (kioskId == item.getItemId()) {
                         serviceName = ks;
                     }

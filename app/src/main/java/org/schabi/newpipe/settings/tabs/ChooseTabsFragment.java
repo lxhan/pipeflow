@@ -34,6 +34,7 @@ import org.schabi.newpipe.settings.SelectChannelGroupFragment;
 import org.schabi.newpipe.settings.SelectKioskFragment;
 import org.schabi.newpipe.settings.SelectPlaylistFragment;
 import org.schabi.newpipe.settings.tabs.AddTabDialog.ChooseTabListItem;
+import org.schabi.newpipe.util.KioskFilter;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.util.ArrayList;
@@ -240,7 +241,8 @@ public class ChooseTabsFragment extends Fragment {
                             tab.getTabIconRes(context)));
                     break;
                 case DEFAULT_KIOSK:
-                    if (!tabList.contains(tab)) {
+                    if (!tabList.contains(tab) && !KioskFilter.isHidden(
+                            KioskFilter.selectedServiceDefaultKioskId(context))) {
                         returnList.add(new ChooseTabListItem(tab.getTabId(),
                                 getString(R.string.default_kiosk_page_summary),
                                 R.drawable.ic_whatshot));
