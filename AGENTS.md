@@ -21,3 +21,4 @@ Every gradle command needs:
 - Lint (report only, never fails the build): `./gradlew :app:lintDebug`
 - Install on phone: `adb install -r app/build/outputs/apk/release/PipeFlow_*-arm64-v8a-release.apk`
 - Sync upstream release: `scripts/sync-upstream.sh`
+- Publish a release for Obtainium (tag `v<version>-pf<n>`, arm64 APK): `scripts/release.sh`. Local builds report version `<version>-dev`.
