@@ -444,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showServices() {
-        for (final StreamingService s : NewPipe.getServices()) {
+        for (final StreamingService s : ServiceFilter.visibleServices()) {
             final String title = s.getServiceInfo().getName()
                     + (ServiceHelper.isBeta(s) ? " (Legacy)" : "");
 

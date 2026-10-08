@@ -64,6 +64,7 @@ import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.PermissionHelper;
+import org.schabi.newpipe.util.ServiceFilter;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
@@ -173,7 +174,8 @@ public class RouterActivity extends AppCompatActivity {
                         }
 
                         // return whether the url was found to be supported or not
-                        return currentLinkType != LinkType.NONE;
+                        return currentLinkType != LinkType.NONE
+                                && !ServiceFilter.isHidden(currentServiceId);
                     } catch (final ExtractionException e) {
                         // this can be reached only when the url is completely unsupported
                         return false;

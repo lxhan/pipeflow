@@ -71,6 +71,7 @@ import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.KeyboardUtil;
 import org.schabi.newpipe.util.NavigationHelper;
+import org.schabi.newpipe.util.ServiceFilter;
 import org.schabi.newpipe.util.ServiceHelper;
 
 import java.net.URLEncoder;
@@ -1359,7 +1360,7 @@ public class SearchFragment extends BaseListFragment<SearchInfo, ListExtractor.I
                 : searchEditText.getText().toString();
 
         final ArrayList<Integer> serviceIds = new ArrayList<>();
-        final List<StreamingService> sortedServices = new ArrayList<>(NewPipe.getServices());
+        final List<StreamingService> sortedServices = new ArrayList<>(ServiceFilter.visibleServices());
         sortedServices.sort(Comparator
                 .comparingInt((StreamingService streamingService) -> {
                     if (streamingService.getServiceId() == ServiceList.YouTube.getServiceId()) {

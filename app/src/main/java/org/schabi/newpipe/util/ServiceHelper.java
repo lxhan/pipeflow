@@ -215,6 +215,11 @@ public final class ServiceHelper {
             serviceId = DEFAULT_FALLBACK_SERVICE.getServiceId();
         }
 
+        // Imported prefs can point at a hidden service; the drawer indexes its menu by id
+        if (ServiceFilter.isHidden(serviceId)) {
+            serviceId = ServiceList.YouTube.getServiceId();
+        }
+
         return serviceId;
     }
 

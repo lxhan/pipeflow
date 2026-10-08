@@ -16,10 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorUtil;
-import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.util.KioskFilter;
 import org.schabi.newpipe.util.KioskTranslator;
+import org.schabi.newpipe.util.ServiceFilter;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.ThemeHelper;
 
@@ -106,7 +106,7 @@ public class SelectKioskFragment extends DialogFragment {
         private final List<Entry> kioskList = new Vector<>();
 
         SelectKioskAdapter() throws Exception {
-            for (final StreamingService service : NewPipe.getServices()) {
+            for (final StreamingService service : ServiceFilter.visibleServices()) {
                 for (final String kioskId : KioskFilter.visibleKiosks(service)) {
                     final String name = String.format(getString(R.string.service_kiosk_string),
                             service.getServiceInfo().getName(),
