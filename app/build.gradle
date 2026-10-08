@@ -6,6 +6,9 @@ plugins {
     id "org.jetbrains.kotlin.kapt"
 }
 
+// pf1, pf2, ... is set by scripts/release.sh; local builds stay "dev" so Obtainium offers the release.
+def pipeflowRelease = project.findProperty("pipeflowRelease") ?: "dev"
+
 def keyPath = System.getenv("KEY_PATH")
 def keyStorePassword = System.getenv("KEY_STORE_PASSWORD")
 def signingKeyAlias = System.getenv("KEY_ALIAS")
@@ -26,6 +29,7 @@ android {
         targetSdk 36
         versionCode baseVersionCode
         versionName appVersionName
+        versionNameSuffix "-${pipeflowRelease}"
         multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -156,7 +160,7 @@ androidComponents.onVariants(androidComponents.selector().all()) { variant ->
         }
         output.versionCode.set(versionCode)
         output.outputFileName.set(
-                "PipeFlow_${appVersionName}-${abi ?: 'universal'}-${variant.name}.apk")
+                "PipeFlow_${appVersionName}-${pipeflowRelease}-${abi ?: 'universal'}-${variant.name}.apk")
     }
 }
 
