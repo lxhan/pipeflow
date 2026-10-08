@@ -20,6 +20,7 @@ Plus the setup that makes it an independent app: own repo, own app id and name, 
 | Base commit | Client `c2a166f` (v5.4.0, the commit upstream's wrapper pins), not `dev` HEAD. |
 | App identity | `applicationId dev.lxhan.pipeflow`, label "PipeFlow". Installs next to stock PipePipe; data moves via PipePipe's export/import backup. |
 | Lives | Strip the "Recommended Lives" kiosk for all services from tabs, drawer, tab picker. Client-only change. |
+| Services | YouTube only. Other services hidden client-side, not removed (extractor untouched, ids are list indexes). |
 | Offline modes | Background (audio) player only is the target. Other modes get the local file too as a side effect but are not verified. |
 | Local preference | Always use the local file when one exists, online or offline. No setting. |
 | Scope of local playback | Any play queue (local playlist, remote playlist, history), because the hook sits in the player. |
@@ -93,6 +94,18 @@ The kiosk id `"Recommended Lives"` is shared by YouTube (only and default kiosk)
 - `ChooseTabsFragment` "add tab" list: omit `DEFAULT_KIOSK` when the current service's default kiosk is hidden.
 
 Result for YouTube: no kiosk anywhere; home opens on Subscriptions. BiliBili/NicoNico keep their other kiosks.
+
+## 2b. Hide non-YouTube services
+
+New `util/ServiceFilter.kt` (`isHidden(serviceId)`, `visibleServices()`, unit-tested). Filtered:
+
+- Drawer service list, search service picker (YouTube Music kept) and kiosk picker use `visibleServices()`.
+- `ServiceHelper.getSelectedServiceId` falls back to YouTube when the saved service is hidden (e.g. imported PipePipe prefs), since the drawer indexes its menu by service id.
+- `RouterActivity`: a shared or opened link for a hidden service shows the unsupported-URL dialog (open in browser / share).
+- Manifest: link filters for SoundCloud, media.ccc, PeerTube, Bandcamp, BiliBili and NicoNico removed; YouTube filters (incl. front-end hosts) kept.
+- Settings: BiliBili/NicoNico account entries, the PeerTube instances entry and "Import SoundCloud subscriptions" removed.
+
+Service classes and PeerTube drawer code stay. Existing items from other services (playlist entries, history) still resolve by service id.
 
 ## 3. Offline playback: local-first player hook
 
